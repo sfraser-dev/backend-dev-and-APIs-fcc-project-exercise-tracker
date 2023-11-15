@@ -26,6 +26,7 @@ mongoose.connect(process.env.MONGO_URI, {
     useUnifiedTopology: true,
 });
 
+// grabbing Schema and model out of mongoose
 const { Schema, model } = mongoose;
 
 const userSchema = new Schema({
