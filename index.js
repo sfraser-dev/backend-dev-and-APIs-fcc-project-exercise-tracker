@@ -89,22 +89,8 @@ app.get("/api/users", (req, res) => {
     const findPromise = User.find({}).select({ _id: 1, username: 1 }).exec();
     findPromise
         .then((findData) => {
-            let arr = [];
-            // findData is an array of objects
-            for (let x of findData) {
-                // deconstruct the object, extract username key values into JS variables
-                let { _id, username} = x;
-                /* 
-                could have obtained JS username variable like this too
-                let username = x["username"];
-                let _id = x["_id"];
-                */
-                // a bit redundant, literalObject is just reconstructing x again
-                let literalObject = {"_id": _id, "username": username};
-                console.log(literalObject);
-                arr.push(x);
-            }
-            res.json(arr);
+            // User.find().select().exec() is returing an array of object literals
+            res.json(findData);
         })
         .catch((findErr) => {
             console.error(findErr);
