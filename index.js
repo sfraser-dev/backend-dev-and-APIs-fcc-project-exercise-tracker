@@ -81,15 +81,38 @@ app.post("/api/users", (req, res) => {
         });
 });
 
-// TODO: get a list of users
+// get a list of users
+app.get("/api/users", (req, res) => {
+    // exec() without a callback argument returns a promise
+    // find({}) == return all documents
+    // select({key:1}) = include these keys, select({key:0}) = ignore these keys
+    const findPromise = User.find({}).select({ _id: 0, username: 1 }).exec();
+    findPromise
+        .then((findData) => {
+            let arr = [];
+            // findData is an array of objects
+            for (let x of findData) {
+                // deconstruct the object, extract username key's value into JS variable username
+                let { username } = x;
+                /* 
+                could have obtained JS username variable like this too
+                let username = x["username"];
+                */
+                console.log(username);
+                arr.push(username);
+            }
+            res.json(arr);
+        })
+        .catch((findErr) => {
+            console.error(findErr);
+        });
+});
 
 // TODO: post a new exercise
 
 // TODO: show the user logs
 
 // ME END
-
-
 
 // app to listen on port 3000
 const listener = app.listen(process.env.PORT || 3000, () => {
