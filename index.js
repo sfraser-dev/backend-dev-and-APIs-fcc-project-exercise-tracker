@@ -86,20 +86,23 @@ app.get("/api/users", (req, res) => {
     // exec() without a callback argument returns a promise
     // find({}) == return all documents
     // select({key:1}) = include these keys, select({key:0}) = ignore these keys
-    const findPromise = User.find({}).select({ _id: 0, username: 1 }).exec();
+    const findPromise = User.find({}).select({ _id: 1, username: 1 }).exec();
     findPromise
         .then((findData) => {
             let arr = [];
             // findData is an array of objects
             for (let x of findData) {
-                // deconstruct the object, extract username key's value into JS variable username
-                let { username } = x;
+                // deconstruct the object, extract username key values into JS variables
+                let { _id, username} = x;
                 /* 
                 could have obtained JS username variable like this too
                 let username = x["username"];
+                let _id = x["_id"];
                 */
-                console.log(username);
-                arr.push(username);
+                // a bit redundant, literalObject is just reconstructing x again
+                let literalObject = {"_id": _id, "username": username};
+                console.log(literalObject);
+                arr.push(x);
             }
             res.json(arr);
         })
