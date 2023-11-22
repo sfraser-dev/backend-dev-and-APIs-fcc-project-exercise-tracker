@@ -17,7 +17,8 @@ const app = express();
 const cors = require("cors");
 app.use(cors());
 
-// middleware for getting body data (req.body.XXX) from forms
+// body-parser middleware extracts the entire body portion of an incoming request
+// stream (HTTP POST) and exposes it on req.body as something easier to interface with
 const bodyParser = require("body-parser");
 // add it to the middleware stack before any app routes are defined - root level middleware
 let middlewareParse = bodyParser.urlencoded({ extended: false });
@@ -100,70 +101,107 @@ app.get("/api/users", (req, res) => {
         });
 });
 
-// "post" a new exercise into the exercises document
+// "post" a new exercise into the exercises document via: /api/users/<USERID>/exercises
 // we will now have a users document and an exercises document in our execiseTracker collection
-app.post(
-    "/api/users/:_id/exercises",
-    bodyParser.urlencoded({ extended: false }),
-    (req, res) => {
-        // *** MUST PUT IN THE ID OF AN EXISTSING USER.
-        // *** See 127.0.0.1:3000/api/users for list of users and their IDs
+app.post("/api/users/:_id/exercises", (req, res) => {
+    // *** MUST PUT IN THE ID OF AN EXISTSING USER.
+    // *** See 127.0.0.1:3000/api/users for list of users and their IDs
 
-        // fill mongoose Exercise model with data from the html form
-        // this exercise will contain a user's id to to tie it to that user
-        const newExercise = new Exercise({
-            userid: req.params._id,
-            description: req.body.description,
-            duration: req.body.duration,
-            // if there's a date from the user, use that. if not, use the current date
-            date: req.body.date ? new Date(req.body.date) : new Date(),
+    // fill mongoose Exercise model with data from the html form
+    // this exercise will contain a user's id to to tie it to that user
+    const newExercise = new Exercise({
+        userid: req.params._id,
+        description: req.body.description,
+        duration: req.body.duration,
+        // if there's a date from the user, use that. if not, use the current date
+        date: req.body.date ? new Date(req.body.date) : new Date(),
+    });
+
+    // mongoose model's save() function returns a promise (if no callback passed as a function to it)
+    const newExerciseSavePromise = newExercise.save();
+    newExerciseSavePromise
+        .then((exerciseDocument) => {
+            console.log(exerciseDocument);
+            console.log(exerciseDocument.userid);
+            // now the exercise has been added to exercises document, update and save "count" (the exercise count) for the user in the users document
+            const userFindByIdPromise = User.findById(
+                exerciseDocument.userid
+            ).exec();
+            userFindByIdPromise
+                .then((userDocument) => {
+                    console.log(userDocument);
+                    // update and save exercise count for this user in the users document
+                    userDocument.count += 1;
+                    const updatedUserDocumentSavePromise = userDocument.save();
+                    updatedUserDocumentSavePromise
+                        .then(() => {
+                            // success, respond with the JSON FCC requested
+                            res.json({
+                                username: userDocument.username,
+                                description: exerciseDocument.description,
+                                duration: exerciseDocument.duration,
+                                date: exerciseDocument.date.toDateString(),
+                                _id: userDocument._id,
+                            });
+                        })
+                        .catch(() => {
+                            res.json({ error: "user document save error" });
+                        });
+                })
+                .catch((userDocumentErr) => {
+                    console.log(userDocumentErr);
+                    res.json({ error: "user find by error" });
+                });
+        })
+        .catch((saveErr) => {
+            console.error(saveErr);
+            res.json({ error: "new exercise record save failed" });
+        });
+});
+
+// show the user logs via: /api/users/<USERID>/logs
+app.get("/api/users/:_id/logs", (req, res) => {
+    // get _id parameter from the matched route
+    const userId = req.params._id; 
+
+    // find the user document
+    const foundUserDocPromise = User.findById(userId).exec();
+    foundUserDocPromise
+        .then(() => {})
+        .catch(() => {
+            res.json({ error: "user find by id log" });
         });
 
-        // mongoose model's save() function returns a promise (if no callback passed as a function to it)
-        const newExerciseSavePromise = newExercise.save();
-        newExerciseSavePromise
-            .then((exerciseDocument) => {
-                console.log(exerciseDocument);
-                console.log(exerciseDocument.userid);
-                // now the exercise has been added to exercises document, update and save "count" (the exercise count) for the user in the users document
-                const userFindByIdPromise = User.findById(
-                    exerciseDocument.userid
-                ).exec();
-                userFindByIdPromise
-                    .then((userDocument) => {
-                        console.log(userDocument);
-                        // update and save exercise count for this user in the users document
-                        userDocument.count += 1;
-                        const updatedUserDocumentSavePromise =
-                            userDocument.save();
-                        updatedUserDocumentSavePromise
-                            .then(() => {
-                                // success, respond with the JSON FCC requested
-                                res.json({
-                                    username: userDocument.username,
-                                    description: exerciseDocument.description,
-                                    duration: exerciseDocument.duration,
-                                    date: exerciseDocument.date.toDateString(),
-                                    _id: userDocument._id,
-                                });
-                            })
-                            .catch(() => {
-                                res.json({ error: "user document save error" });
-                            });
-                    })
-                    .catch((userDocumentErr) => {
-                        console.log(userDocumentErr);
-                        res.json({ error: "user find by error" });
-                    });
-            })
-            .catch((saveErr) => {
-                console.error(saveErr);
-                res.json({ error: "new exercise record save failed" });
-            });
-    }
-);
-
-// TODO: show the user logs
+    // find the exercise documents for that user
+    // select({key:1}) -> include these keys... select({key:0}) -> ignore these keys
+    const foundExerciseDocsPromise = Exercise.find({ userid: userId })
+        .select({ _id: 0, userid: 0, __v: 0 })
+        .exec();
+    foundExerciseDocsPromise
+        .then((exerciseData) => {
+            // push the required exercise document information into an array of objects 
+            const theExerciseLog = [];
+            exerciseData.forEach((j) =>
+                theExerciseLog.push({
+                    description: j.description,
+                    duration: j.duration,
+                    date: j.date.toDateString(),
+                })
+            );
+            res.json({
+                // user info
+                username: foundUserDocPromise.username,
+                count: foundUserDocPromise.count,
+                _id: userId,
+                // exercise info
+                log: theExerciseLog,
+            },);
+        })
+        .catch(() => {
+            res.json({ error: "exercise find by userid log" });
+        });
+});
+//655df7a5dc954d48183d8bd3
 
 // ME END
 
