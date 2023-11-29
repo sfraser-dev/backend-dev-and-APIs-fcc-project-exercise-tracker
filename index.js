@@ -33,7 +33,6 @@ app.get("/", (req, res) => {
     res.sendFile(__dirname + "/views/index.html");
 });
 
-// ME START
 // mongoose connect (without warnings)
 mongoose
     .connect(process.env.MONGO_URI, {
@@ -159,7 +158,7 @@ app.post("/api/users/:_id/exercises", (req, res) => {
         });
 });
 
-// FCC: adding from, to and limit queries
+// FCC: adding "from", "to" and "limit" queries
 // --
 // NOTE: req.params will return parameters in matched route. If route
 // is /user/:id and request made to /user/5 - req.params yields{id: "5"}
@@ -170,45 +169,58 @@ app.post("/api/users/:_id/exercises", (req, res) => {
 // FCC test criteria:
 // GET user's exercise log: GET /api/users/:_id/logs?[from][&to][&limit]
 // [ ] = optional
-// from, to = dates (yyyy-mm-dd); limit = number
+// "from", "to" = dates (YYYY-MM-DD); "limit" = number
 // --
 // show the user logs via: /api/users/<USERID>/logs
-// optional queries: /api/users/<USERID>/logs?from=2023-11-11&to=2023-11-29&limit=3
-app.get("/api/users/:_id/logs", async (req, res) => {
+// optional queries: /api/users/<USERID>/logs?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>limit=<INT>
+app.get("/api/users/:_id/logs", (req, res) => {
     // get _id parameter from the matched route
-    const userId = req.params._id;
+    const userIdInput = req.params._id;
 
-    // destructure optional queries
-    const { from, to, limit } = req.query;
+    // deconstruct any possible query parameters 
+    const fromQuery = req.query.from;
+    const toQuery = req.query.to;
+    const limitQuery = req.query.limit;
 
-    // filter between two dates using mongoose date range filter object
-    let exerciseDateRangeFilterObj = {};
-    // if both from and to queries exist
-    if (from && to) {
-        exerciseDateRangeFilterObj = {
-            $gte: new Date(from),
-            $lte: new Date(to),
+    // create an exerciseSearchFilter object to be used as an argument 
+    // to mongoose's find() function.
+    // the search filter will filter by userid and a possible date
+    // range (using mongoose's $gte and $lte operators)
+    let exerciseSearchFilter = {};
+    if (fromQuery && toQuery) {
+        // if both "from" and "to" queries exist in the route
+        exerciseSearchFilter = {
+            userid: userIdInput,
+            date: {
+                $gte: new Date(fromQuery),
+                $lte: new Date(toQuery),
+            },
         };
-    // if only a from query exists
-    } else if (from) {
-        exerciseDateRangeFilterObj = {
-            $gte: new Date(from),
+    } else if (fromQuery) {
+        // if only a "from" query exists in the route
+        exerciseSearchFilter = {
+            userid: userIdInput,
+            date: {
+                $gte: new Date(fromQuery),
+            },
         };
-    // if only a to query exists
-    } else if (to) {
-        exerciseDateRangeFilterObj = {
-            $lte: new Date(to),
+    } else if (toQuery) {
+        // if only a "to" query exists in the route
+        exerciseSearchFilter = {
+            userid: userIdInput,
+            date: {
+                $lte: new Date(toQuery),
+            },
+        };
+    } else {
+        // else there is no "from" query and no "to" query in the route
+        exerciseSearchFilter = {
+            userid: userIdInput,
         };
     }
 
-    // create a filter object for mongoose find function (userid, fromDate and toDate)
-    let exerciseFindFilter = {
-        userid: userId,
-        date: exerciseDateRangeFilterObj,
-    };
-
     // find the user document
-    const foundUserDocPromise = User.findById(userId).exec();
+    const foundUserDocPromise = User.findById(userIdInput).exec();
     let localUserName = "";
     let localUserCount = 0;
     foundUserDocPromise
@@ -221,10 +233,13 @@ app.get("/api/users/:_id/logs", async (req, res) => {
             console.log("error: user find by id log");
         });
 
-    // find the exercise documents for that user
-    // select({key:1}) -> include these keys... select({key:0}) -> ignore these keys
-    const foundExerciseDocsPromise = Exercise.find(exerciseFindFilter)
-        .limit(parseInt(limit))
+    // find the exercise documents for the requested user using the
+    // previously created exerciseSearchFilter object
+    // limit the amount of records returned via optional limit-query-value
+    // select({key:1}) -> include these keys
+    // select({key:0}) -> ignore these keys
+    const foundExerciseDocsPromise = Exercise.find(exerciseSearchFilter)
+        .limit(parseInt(limitQuery))
         .select({ _id: 0, userid: 0, __v: 0 })
         .exec();
     foundExerciseDocsPromise
@@ -242,7 +257,7 @@ app.get("/api/users/:_id/logs", async (req, res) => {
                 // user info
                 username: localUserName,
                 count: localUserCount,
-                _id: userId,
+                _id: userIdInput,
                 // exercise info
                 log: theExerciseLog,
             });
@@ -251,10 +266,6 @@ app.get("/api/users/:_id/logs", async (req, res) => {
             res.json({ error: "exercise find by userid log" });
         });
 });
-// _id for testing
-//655df7a5dc954d48183d8bd3
-
-// ME END
 
 // app to listen on port 3000
 const listener = app.listen(process.env.PORT || 3000, () => {
