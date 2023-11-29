@@ -70,7 +70,7 @@ const Exercise = mongoose.model("Exercise", exerciseSchema);
 app.post("/api/users", (req, res) => {
     const theUsername = req.body.username;
     console.log(theUsername);
-    const userObject = new User({ username: theUsername, count: 1 });
+    const userObject = new User({ username: theUsername, count: 0 });
     // mongoose model's save() function returns a promise (if no callback passed as a function to it)
     const savePromise = userObject.save();
     savePromise
@@ -160,16 +160,23 @@ app.post("/api/users/:_id/exercises", (req, res) => {
 });
 
 // show the user logs via: /api/users/<USERID>/logs
-app.get("/api/users/:_id/logs", (req, res) => {
+app.get("/api/users/:_id/logs", async (req, res) => {
     // get _id parameter from the matched route
-    const userId = req.params._id; 
-
+    const userId = req.params._id;
+    console.log(`req.params._id = ${req.params._id}`);
+    console.log(`userId = ${userId}`);
     // find the user document
     const foundUserDocPromise = User.findById(userId).exec();
+    let localUserName = "";
+    let localUserCount = 0;
     foundUserDocPromise
-        .then(() => {})
+        .then((data) => {
+            localUserName = data.username;
+            localUserCount = data.count;
+        })
         .catch(() => {
             res.json({ error: "user find by id log" });
+            console.log("error: user find by id log");
         });
 
     // find the exercise documents for that user
@@ -179,7 +186,7 @@ app.get("/api/users/:_id/logs", (req, res) => {
         .exec();
     foundExerciseDocsPromise
         .then((exerciseData) => {
-            // push the required exercise document information into an array of objects 
+            // push the required exercise document information into an array of objects
             const theExerciseLog = [];
             exerciseData.forEach((j) =>
                 theExerciseLog.push({
@@ -190,17 +197,18 @@ app.get("/api/users/:_id/logs", (req, res) => {
             );
             res.json({
                 // user info
-                username: foundUserDocPromise.username,
-                count: foundUserDocPromise.count,
+                username: localUserName,
+                count: localUserCount,
                 _id: userId,
                 // exercise info
                 log: theExerciseLog,
-            },);
+            });
         })
         .catch(() => {
             res.json({ error: "exercise find by userid log" });
         });
 });
+// _id for testing
 //655df7a5dc954d48183d8bd3
 
 // ME END
