@@ -172,7 +172,7 @@ app.post("/api/users/:_id/exercises", (req, res) => {
 // "from", "to" = dates (YYYY-MM-DD); "limit" = number
 // --
 // show the user logs via: /api/users/<USERID>/logs
-// optional queries: /api/users/<USERID>/logs?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>limit=<INT>
+// optional queries: /api/users/<USERID>/logs?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>&limit=<NATURAL-NUMBER>
 app.get("/api/users/:_id/logs", (req, res) => {
     // get _id parameter from the matched route
     const userIdInput = req.params._id;
