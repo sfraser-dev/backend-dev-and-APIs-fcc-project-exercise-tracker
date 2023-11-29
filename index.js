@@ -159,12 +159,54 @@ app.post("/api/users/:_id/exercises", (req, res) => {
         });
 });
 
+// FCC: adding from, to and limit queries
+// --
+// NOTE: req.params will return parameters in matched route. If route
+// is /user/:id and request made to /user/5 - req.params yields{id: "5"}
+// --
+// NOTE: if request made is /user?name=tom&age=55,
+// req.query yields {name:"tom", age: "55"}
+// --
+// FCC test criteria:
+// GET user's exercise log: GET /api/users/:_id/logs?[from][&to][&limit]
+// [ ] = optional
+// from, to = dates (yyyy-mm-dd); limit = number
+// --
 // show the user logs via: /api/users/<USERID>/logs
+// optional queries: /api/users/<USERID>/logs?from=2023-11-11&to=2023-11-29&limit=3
 app.get("/api/users/:_id/logs", async (req, res) => {
     // get _id parameter from the matched route
     const userId = req.params._id;
-    console.log(`req.params._id = ${req.params._id}`);
-    console.log(`userId = ${userId}`);
+
+    // destructure optional queries
+    const { from, to, limit } = req.query;
+
+    // filter between two dates using mongoose date range filter object
+    let exerciseDateRangeFilterObj = {};
+    // if both from and to queries exist
+    if (from && to) {
+        exerciseDateRangeFilterObj = {
+            $gte: new Date(from),
+            $lte: new Date(to),
+        };
+    // if only a from query exists
+    } else if (from) {
+        exerciseDateRangeFilterObj = {
+            $gte: new Date(from),
+        };
+    // if only a to query exists
+    } else if (to) {
+        exerciseDateRangeFilterObj = {
+            $lte: new Date(to),
+        };
+    }
+
+    // create a filter object for mongoose find function (userid, fromDate and toDate)
+    let exerciseFindFilter = {
+        userid: userId,
+        date: exerciseDateRangeFilterObj,
+    };
+
     // find the user document
     const foundUserDocPromise = User.findById(userId).exec();
     let localUserName = "";
@@ -181,7 +223,8 @@ app.get("/api/users/:_id/logs", async (req, res) => {
 
     // find the exercise documents for that user
     // select({key:1}) -> include these keys... select({key:0}) -> ignore these keys
-    const foundExerciseDocsPromise = Exercise.find({ userid: userId })
+    const foundExerciseDocsPromise = Exercise.find(exerciseFindFilter)
+        .limit(parseInt(limit))
         .select({ _id: 0, userid: 0, __v: 0 })
         .exec();
     foundExerciseDocsPromise
