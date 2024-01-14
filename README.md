@@ -4,3 +4,5 @@ This is the boilerplate for the Exercise Tracker project. Instructions for build
 
 npm install
 npm run start
+
+Upload code to replit.com or glitch.com
