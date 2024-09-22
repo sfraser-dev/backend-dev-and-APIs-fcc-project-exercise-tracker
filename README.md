@@ -1,8 +1,9 @@
 # Exercise Tracker
 
-This is the boilerplate for the Exercise Tracker project. Instructions for building your project can be found at https://www.freecodecamp.org/learn/apis-and-microservices/apis-and-microservices-projects/exercise-tracker
+An exercise tracker using Express.js and MongoDB.
 
-npm install
-npm run start
+Instructions:
+  - npm install
+  - npm run start
 
-Upload code to replit.com or glitch.com
+Upload code to replit.com or glitch.com for fcc verification.
