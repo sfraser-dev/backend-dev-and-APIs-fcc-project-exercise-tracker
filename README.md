@@ -7,4 +7,8 @@ Instructions:
 - npm install
 - npm run start
 
-Upload code to replit.com or glitch.com for FCC verification.
+See this code in production:
+
+- <https://replit.com/@sfraser-dev/boilerplate-project-exercisetracker>
+
+*Need to upload code to replit.com or glitch.com for FCC verification.*
