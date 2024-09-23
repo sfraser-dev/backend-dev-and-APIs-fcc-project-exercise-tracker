@@ -9,6 +9,7 @@ Instructions:
 
 See this code in production:
 
-- <https://replit.com/@sfraser-dev/boilerplate-project-exercisetracker>
-
-*Need to upload code to replit.com or glitch.com for FCC verification.*
+- Replit:
+    - <https://replit.com/@sfraser-dev/boilerplate-project-exercisetracker>
+- Gitpod:
+   - <https://gitpod.io/#https://github.com/sfraser-dev/javascript-node-express-exercise-tracker> 
