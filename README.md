@@ -11,5 +11,3 @@ See this code in production:
 
 - Replit:
     - <https://replit.com/@sfraser-dev/boilerplate-project-exercisetracker>
-- Gitpod:
-   - <https://gitpod.io/#https://github.com/sfraser-dev/javascript-node-express-exercise-tracker> 
