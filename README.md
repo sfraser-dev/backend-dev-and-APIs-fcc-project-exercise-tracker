@@ -7,7 +7,7 @@ Instructions:
 - npm install
 - npm run start
 
-See this code in production:
+View:
 
 - Replit:
     - <https://replit.com/@sfraser-dev/boilerplate-project-exercisetracker>
