@@ -12,4 +12,4 @@ View:
 - Replit:
     - <https://replit.com/@sfraser-dev/boilerplate-project-exercisetracker>
 - Glitch:
-    - <expensive-rough-veil.glitch.me> 
+    - <https://expensive-rough-veil.glitch.me> 
